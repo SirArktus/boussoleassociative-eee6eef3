@@ -77,13 +77,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "La Boussole du bénévolat" },
-      { name: "description", content: "Un petit voyage de quelques minutes pour découvrir les associations qui te ressemblent." },
-      { property: "og:title", content: "La Boussole du bénévolat" },
-      { property: "og:description", content: "Découvre les associations qui te ressemblent en quelques minutes." },
+      { title: "La Boussole du bénévolat — Trouve l'association qui te ressemble" },
+      { name: "description", content: "Un petit voyage de 3 minutes pour faire émerger l'envie et découvrir les associations qui te ressemblent." },
+      { property: "og:title", content: "La Boussole du bénévolat — Trouve l'association qui te ressemble" },
+      { property: "og:description", content: "Un petit voyage de 3 minutes pour faire émerger l'envie et découvrir les associations qui te ressemblent." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "La Boussole du bénévolat — Trouve l'association qui te ressemble" },
+      { name: "twitter:description", content: "Un petit voyage de 3 minutes pour faire émerger l'envie et découvrir les associations qui te ressemblent." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fd6c2e74-aa9c-44c5-b797-b0b17780aa3f/id-preview-d0a14f63--b8d7dcc0-8c6b-45ec-a701-7f09adfda810.lovable.app-1783589353849.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fd6c2e74-aa9c-44c5-b797-b0b17780aa3f/id-preview-d0a14f63--b8d7dcc0-8c6b-45ec-a701-7f09adfda810.lovable.app-1783589353849.png" },
     ],
     links: [
       {

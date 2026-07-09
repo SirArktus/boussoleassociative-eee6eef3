@@ -27,10 +27,10 @@ export const Route = createFileRoute("/")({
         content:
           "Un petit voyage de 3 minutes pour faire émerger l'envie et découvrir les associations qui te ressemblent.",
       },
-      { property: "og:title", content: "La Boussole du bénévolat" },
+      { property: "og:title", content: "La Boussole du bénévolat — Trouve l'association qui te ressemble" },
       {
         property: "og:description",
-        content: "Découvre en quelques minutes les associations qui te correspondent.",
+        content: "Un petit voyage de 3 minutes pour faire émerger l'envie et découvrir les associations qui te ressemblent.",
       },
     ],
   }),
