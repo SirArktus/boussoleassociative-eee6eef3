@@ -443,3 +443,29 @@ export function addScores(base: Scores, add: Partial<Scores>): Scores {
   });
   return out;
 }
+
+// Select N dilemma indices most relevant to the player's current top axes.
+// Falls back to the first N when scores are still all zero.
+export function selectDilemmaIndices(scores: Scores, n = 4): number[] {
+  const top = topAxes(scores, 5);
+  const anyScore = (Object.values(scores) as number[]).some((v) => v !== 0);
+  if (!anyScore) return dilemmas.slice(0, n).map((_, i) => i);
+  const rankOf = new Map<string, number>(
+    top.map((ax, i) => [ax, top.length - i]),
+  );
+  return dilemmas
+    .map((d, i) => {
+      const axes = new Set<string>([
+        ...Object.keys(d.a.scores || {}),
+        ...Object.keys(d.b.scores || {}),
+      ]);
+      let relevance = 0;
+      axes.forEach((ax) => {
+        relevance += rankOf.get(ax) || 0;
+      });
+      return { i, relevance };
+    })
+    .sort((x, y) => y.relevance - x.relevance)
+    .slice(0, n)
+    .map((x) => x.i);
+}

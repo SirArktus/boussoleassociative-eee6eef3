@@ -2,35 +2,43 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo } from "react";
 import "@/main-fonts";
-import { useGame } from "@/lib/game-store";
+import { useGame, type PickKey } from "@/lib/game-store";
 import {
   cardsLove,
   cardsHate,
   cardsFuture,
   cardsFeel,
   cardsPower,
-  dilemmas,
+  dilemmas as allDilemmas,
   computeProfile,
   matchAssociations,
   type Card,
 } from "@/lib/game-data";
-import { Screen, Whisper, Title, Sub } from "@/components/game/Screen";
-import { CardGrid, DuoCards } from "@/components/game/CardGrid";
+import { Screen, Title, Sub, NavBar, AppHeader } from "@/components/game/Screen";
+import { CardGrid } from "@/components/game/CardGrid";
 import { Compass } from "@/components/game/Compass";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "La Boussole du bénévolat — Trouve l'association qui te ressemble" },
+      {
+        title:
+          "La boussole associative — Trouve les associations qui te ressemblent",
+      },
       {
         name: "description",
         content:
-          "Un petit voyage de 3 minutes pour faire émerger l'envie et découvrir les associations qui te ressemblent.",
+          "En 3 minutes, découvre les associations faites pour toi. Pas d'inscription, juste quelques cartes à choisir.",
       },
-      { property: "og:title", content: "La Boussole du bénévolat — Trouve l'association qui te ressemble" },
+      {
+        property: "og:title",
+        content:
+          "La boussole associative — Trouve les associations qui te ressemblent",
+      },
       {
         property: "og:description",
-        content: "Un petit voyage de 3 minutes pour faire émerger l'envie et découvrir les associations qui te ressemblent.",
+        content:
+          "En 3 minutes, découvre les associations faites pour toi. Pas d'inscription, juste quelques cartes à choisir.",
       },
     ],
   }),
@@ -40,21 +48,45 @@ export const Route = createFileRoute("/")({
 function GamePage() {
   const step = useGame((s) => s.step);
   return (
-    <main className="min-h-screen flex items-center justify-center">
+    <main className="min-h-screen flex items-start justify-center">
+      {step !== "welcome" && <AppHeader />}
       <AnimatePresence mode="wait">
         {step === "welcome" && <Welcome key="welcome" />}
         {step === "intro" && <Intro key="intro" />}
-        {step === "love" && <PickOne key="love" title="Tu adores ?" whisper="On va apprendre à te connaître" sub="Si tu ne devais choisir qu'une seule de ces cartes." cards={cardsLove} next="hate" />}
-        {step === "hate" && <PickOne key="hate" title="Tu détestes ?" whisper="Découvrons ce qui t'anime" sub="Une seule carte, celle qui te repousse le plus." cards={cardsHate} next="future" />}
-        {step === "future" && <PickOne key="future" title="Dans un an, qui aimerais-tu devenir ?" whisper="Ton aventure commence" sub="Choisis ce qui te fait le plus vibrer." cards={cardsFuture} next="feel" columns={3} />}
-        {step === "feel" && <PickOne key="feel" title="À la fin d'une activité idéale, je voudrais ressentir…" whisper="Tu prends une nouvelle direction" sub="Un seul ressenti, le plus juste pour toi." cards={cardsFeel} next="power" />}
-        {step === "power" && <PickOne key="power" title="Quel super pouvoir aimerais-tu avoir ?" whisper="Ton profil prend forme…" sub="Choisis celui qui te ressemble." cards={cardsPower} next="compass1" />}
-        {step === "compass1" && <CompassInterlude key="c1" text="Nous commençons à comprendre ce qui te fait vibrer…" next="dilemmas" />}
-        {step === "dilemmas" && <DilemmasScreen key="d" />}
-        {step === "compass2" && <CompassInterlude key="c2" text="Ton horizon se dessine…" next="profile" />}
-        {step === "profile" && <ProfileScreen key="p" />}
-        {step === "assocList" && <AssocList key="al" />}
-        {step === "assocDetail" && <AssocDetail key="ad" />}
+        {step === "love" && (
+          <PickScreen key="love" stepKey="love" title="J'adore…" cards={cardsLove} />
+        )}
+        {step === "hate" && (
+          <PickScreen key="hate" stepKey="hate" title="Je déteste…" cards={cardsHate} />
+        )}
+        {step === "future" && (
+          <PickScreen
+            key="future"
+            stepKey="future"
+            title="Dans un an, j'aimerais…"
+            cards={cardsFuture}
+            columns={3}
+          />
+        )}
+        {step === "feel" && (
+          <PickScreen
+            key="feel"
+            stepKey="feel"
+            title="À la fin d'une activité, je veux ressentir…"
+            cards={cardsFeel}
+          />
+        )}
+        {step === "power" && (
+          <PickScreen
+            key="power"
+            stepKey="power"
+            title="Mon super pouvoir ?"
+            cards={cardsPower}
+          />
+        )}
+        {step === "dilemmas" && <DilemmasScreen key="dilemmas" />}
+        {step === "profile" && <ProfileScreen key="profile" />}
+        {step === "assocList" && <AssocFeed key="assocList" />}
       </AnimatePresence>
     </main>
   );
@@ -64,30 +96,58 @@ function GamePage() {
 
 function Welcome() {
   const goto = useGame((s) => s.goto);
+  useEffect(() => {
+    const t = setTimeout(() => goto("intro"), 4500);
+    return () => clearTimeout(t);
+  }, [goto]);
   return (
     <Screen keyId="welcome">
       <motion.div
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-        className="mb-6"
+        className="mb-8"
       >
-        <Compass spinning={false} />
+        <Compass spinning />
       </motion.div>
-      <Whisper>La Boussole</Whisper>
-      <Title>Trouve l'association qui te ressemble.</Title>
-      <Sub>
-        Un petit voyage de quelques minutes pour faire émerger l'envie. Pas de compte, pas de formulaire.
-      </Sub>
+      <motion.h1
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.7 }}
+        className="font-display text-4xl sm:text-5xl md:text-6xl text-center text-foreground leading-[1.05] mb-4"
+      >
+        La boussole associative
+      </motion.h1>
+      <motion.p
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.9, duration: 0.7 }}
+        className="text-center text-muted-foreground max-w-md text-lg sm:text-xl"
+      >
+        Trouve les associations qui te ressemblent.
+      </motion.p>
+    </Screen>
+  );
+}
+
+function Intro() {
+  const next = useGame((s) => s.next);
+  return (
+    <Screen keyId="intro">
+      <Title>En 3 minutes, je découvre les associations faites pour moi.</Title>
+      <Sub>Pas d'inscription. Juste quelques cartes à choisir.</Sub>
       <div className="flex flex-col gap-3 w-full max-w-sm">
         <motion.button
           whileHover={{ y: -2 }}
           whileTap={{ scale: 0.97 }}
-          onClick={() => goto("intro")}
+          onClick={next}
           className="w-full rounded-full py-4 px-6 font-semibold text-primary-foreground shadow-[var(--shadow-soft)]"
-          style={{ background: "linear-gradient(135deg, oklch(0.78 0.15 40), oklch(0.72 0.16 25))" }}
+          style={{
+            background:
+              "linear-gradient(135deg, oklch(0.78 0.15 40), oklch(0.72 0.16 25))",
+          }}
         >
-          ✨ Fais-moi découvrir !
+          ✨ Lançons la recherche !
         </motion.button>
         <a
           href="https://www.reze.fr/que-faire-a-reze/vie-associative-2/annuaire-des-associations/"
@@ -95,122 +155,80 @@ function Welcome() {
           rel="noreferrer"
           className="w-full text-center rounded-full py-4 px-6 font-medium border border-border/70 bg-card/70 backdrop-blur text-foreground hover:bg-card transition-colors"
         >
-          Je sais ce que je cherche
+          Je sais déjà ce que je veux
         </a>
       </div>
     </Screen>
   );
 }
 
-function Intro() {
-  const goto = useGame((s) => s.goto);
-  return (
-    <Screen keyId="intro">
-      <Whisper>On y va, doucement</Whisper>
-      <Title>En quelques minutes, nous allons découvrir les activités qui te ressemblent.</Title>
-      <Sub>Aucune mauvaise réponse. Choisis simplement ce qui te parle le plus.</Sub>
-      <motion.button
-        whileHover={{ y: -2 }}
-        whileTap={{ scale: 0.97 }}
-        onClick={() => goto("love")}
-        className="rounded-full py-4 px-10 font-semibold text-primary-foreground shadow-[var(--shadow-soft)]"
-        style={{ background: "linear-gradient(135deg, oklch(0.78 0.15 40), oklch(0.72 0.16 25))" }}
-      >
-        Commencer
-      </motion.button>
-    </Screen>
-  );
-}
-
-function PickOne({
+function PickScreen({
+  stepKey,
   title,
-  whisper,
-  sub,
   cards,
-  next,
   columns = 2,
 }: {
+  stepKey: PickKey;
   title: string;
-  whisper: string;
-  sub?: string;
   cards: Card[];
-  next: Parameters<ReturnType<typeof useGame.getState>["goto"]>[0];
   columns?: 2 | 3;
 }) {
-  const goto = useGame((s) => s.goto);
-  const addScore = useGame((s) => s.addScore);
+  const setChoice = useGame((s) => s.setChoice);
+  const next = useGame((s) => s.next);
+  const prev = useGame((s) => s.prev);
+  const selectedId = useGame((s) => s.selections[stepKey]);
   return (
-    <Screen keyId={title}>
-      <Whisper>{whisper}</Whisper>
+    <Screen keyId={stepKey}>
       <Title>{title}</Title>
-      {sub && <Sub>{sub}</Sub>}
+      <div className="h-4" />
       <CardGrid
         cards={cards}
         columns={columns}
-        onPick={(c) => {
-          addScore(c.scores);
-          setTimeout(() => goto(next), 220);
-        }}
+        selectedId={selectedId}
+        onPick={(c) => setChoice(stepKey, c.id)}
       />
-    </Screen>
-  );
-}
-
-function CompassInterlude({ text, next }: { text: string; next: Parameters<ReturnType<typeof useGame.getState>["goto"]>[0] }) {
-  const goto = useGame((s) => s.goto);
-  useEffect(() => {
-    const t = setTimeout(() => goto(next), 3800);
-    return () => clearTimeout(t);
-  }, [goto, next]);
-  return (
-    <Screen keyId={text}>
-      <Compass spinning />
-      <motion.p
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.2, duration: 0.8 }}
-        className="mt-10 font-display text-2xl sm:text-3xl text-center text-foreground max-w-md"
-      >
-        {text}
-      </motion.p>
+      <NavBar onPrev={prev} onNext={next} nextDisabled={!selectedId} />
     </Screen>
   );
 }
 
 function DilemmasScreen() {
   const idx = useGame((s) => s.dilemmaIndex);
-  const nextDilemma = useGame((s) => s.nextDilemma);
-  const addScore = useGame((s) => s.addScore);
-  const goto = useGame((s) => s.goto);
-  const d = dilemmas[idx];
+  const order = useGame((s) => s.dilemmaOrder);
+  const dilemmaSelections = useGame((s) => s.selections.dilemmas);
+  const setDilemmaChoice = useGame((s) => s.setDilemmaChoice);
+  const next = useGame((s) => s.next);
+  const prev = useGame((s) => s.prev);
 
-  if (!d) {
-    // safety: shouldn't render
-    return null;
-  }
-
-  const pick = (c: Card) => {
-    addScore(c.scores);
-    if (idx + 1 >= dilemmas.length) {
-      goto("compass2");
-    } else {
-      setTimeout(() => nextDilemma(), 200);
-    }
-  };
+  const dIdx = order[idx];
+  const d = dIdx !== undefined ? allDilemmas[dIdx] : undefined;
+  if (!d) return null;
+  const selectedId = dilemmaSelections[dIdx];
+  const cards: Card[] = [d.a, d.b];
 
   return (
     <Screen keyId={`dilemma-${idx}`}>
-      <Whisper>Dilemme {idx + 1} / {dilemmas.length}</Whisper>
-      <Title>Tu préfères…</Title>
-      <div className="h-6" />
-      <DuoCards a={d.a} b={d.b} onPick={pick} />
+      <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground/80 mb-3">
+        {idx + 1} / {order.length}
+      </p>
+      <Title>Je préfère…</Title>
+      <div className="h-4" />
+      <CardGrid
+        cards={cards}
+        columns={2}
+        selectedId={selectedId}
+        onPick={(c) => setDilemmaChoice(c.id)}
+      />
+      <NavBar onPrev={prev} onNext={next} nextDisabled={!selectedId} />
     </Screen>
   );
 }
 
 function ProfileScreen() {
-  const scores = useGame((s) => s.scores);
-  const goto = useGame((s) => s.goto);
+  const computeScores = useGame((s) => s.computeScores);
+  const next = useGame((s) => s.next);
+  const prev = useGame((s) => s.prev);
+  const scores = computeScores();
   const profile = useMemo(() => computeProfile(scores), [scores]);
   return (
     <Screen keyId="profile">
@@ -221,9 +239,11 @@ function ProfileScreen() {
       >
         <Compass spinning={false} />
       </motion.div>
-      <Whisper>Ton profil</Whisper>
+      <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground/80 mt-6 mb-2">
+        Mon profil
+      </p>
       <Title>{profile.title}</Title>
-      <div className="mt-4 mb-8 space-y-1.5 text-center text-lg text-foreground/80 max-w-md">
+      <div className="mt-4 mb-2 space-y-1.5 text-center text-lg text-foreground/80 max-w-md">
         {profile.lines.map((l, i) => (
           <motion.p
             key={i}
@@ -235,74 +255,94 @@ function ProfileScreen() {
           </motion.p>
         ))}
       </div>
-      <motion.button
-        whileHover={{ y: -2 }}
-        whileTap={{ scale: 0.97 }}
-        onClick={() => {
-          useGame.getState().setAssocIndex(0);
-          goto("assocList");
-        }}
-        className="rounded-full py-4 px-10 font-semibold text-primary-foreground shadow-[var(--shadow-soft)]"
-        style={{ background: "linear-gradient(135deg, oklch(0.78 0.15 40), oklch(0.72 0.16 25))" }}
-      >
-        Découvrir mes associations →
-      </motion.button>
+      <NavBar onPrev={prev} onNext={next} nextLabel="Voir mes associations" />
     </Screen>
   );
 }
 
-function AssocList() {
-  const scores = useGame((s) => s.scores);
-  const idx = useGame((s) => s.assocIndex);
-  const setAssocIndex = useGame((s) => s.setAssocIndex);
-  const goto = useGame((s) => s.goto);
+function AssocFeed() {
+  const computeScores = useGame((s) => s.computeScores);
+  const prev = useGame((s) => s.prev);
   const reset = useGame((s) => s.reset);
+  const scores = computeScores();
   const matches = useMemo(() => matchAssociations(scores), [scores]);
-  const a = matches[idx];
-  if (!a) return null;
-
   return (
-    <Screen keyId={`assoc-${a.id}`}>
-      <Whisper>Association {idx + 1} / {matches.length}</Whisper>
-      <motion.article
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full rounded-3xl overflow-hidden bg-card border border-border/60 shadow-[var(--shadow-soft)]"
-      >
-        <div className={`h-40 sm:h-52 bg-gradient-to-br ${a.gradient} flex items-center justify-center`}>
-          <span className="text-6xl sm:text-7xl drop-shadow-sm">{a.emoji}</span>
-        </div>
-        <div className="p-6 sm:p-7 space-y-3">
-          <h2 className="font-display text-2xl sm:text-3xl text-foreground">{a.name}</h2>
-          <p className="text-sm text-muted-foreground">{a.address}</p>
-          <div className="flex flex-wrap gap-2">
-            {a.keywords.map((k) => (
-              <span
-                key={k}
-                className="text-xs font-medium px-3 py-1 rounded-full bg-accent/60 text-accent-foreground"
-              >
-                {k}
-              </span>
-            ))}
-          </div>
-          <p className="text-foreground/85">{a.description}</p>
-        </div>
-      </motion.article>
+    <Screen keyId="assoc-feed">
+      <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground/80 mb-2">
+        Mes associations
+      </p>
+      <Title>Voici ce qui me ressemble.</Title>
+      <Sub>Fais défiler pour découvrir chaque association.</Sub>
 
-      <div className="mt-6 flex flex-wrap gap-3 justify-center w-full">
+      <div className="space-y-6 w-full">
+        {matches.map((a, i) => (
+          <motion.article
+            key={a.id}
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.5,
+              delay: i * 0.05,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            className="w-full rounded-3xl overflow-hidden bg-card border border-border/60 shadow-[var(--shadow-soft)]"
+          >
+            <div
+              className={`h-32 sm:h-40 bg-gradient-to-br ${a.gradient} flex items-center justify-center`}
+            >
+              <span className="text-6xl drop-shadow-sm">{a.emoji}</span>
+            </div>
+            <div className="p-5 sm:p-6 space-y-3">
+              <div>
+                <h2 className="font-display text-2xl text-foreground">
+                  {a.name}
+                </h2>
+                <p className="text-sm text-muted-foreground italic mt-0.5">
+                  {a.tagline}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {a.keywords.map((k) => (
+                  <span
+                    key={k}
+                    className="text-xs font-medium px-3 py-1 rounded-full bg-accent/60 text-accent-foreground"
+                  >
+                    {k}
+                  </span>
+                ))}
+              </div>
+              <p className="text-foreground/85 leading-relaxed">
+                {a.longDescription}
+              </p>
+              <dl className="grid sm:grid-cols-2 gap-3 text-sm pt-3 border-t border-border/50 mt-2">
+                <Info label="Adresse" value={a.address} />
+                <Info label="Horaires" value={a.hours} />
+                <Info label="Contact" value={a.contact} />
+                <Info
+                  label="Site"
+                  value={
+                    <a
+                      className="text-primary underline underline-offset-2"
+                      href={a.site}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {a.site.replace(/^https?:\/\//, "")}
+                    </a>
+                  }
+                />
+              </dl>
+            </div>
+          </motion.article>
+        ))}
+      </div>
+
+      <div className="mt-10 flex flex-wrap gap-3 justify-center w-full">
         <button
-          onClick={() => goto("assocDetail")}
-          className="rounded-full py-3 px-6 font-semibold text-primary-foreground shadow-[var(--shadow-card)]"
-          style={{ background: "linear-gradient(135deg, oklch(0.78 0.15 40), oklch(0.72 0.16 25))" }}
+          onClick={prev}
+          className="rounded-full py-3 px-6 font-medium border border-border/70 bg-card/70 backdrop-blur text-foreground hover:bg-card transition-colors"
         >
-          En savoir plus
-        </button>
-        <button
-          onClick={() => setAssocIndex((idx + 1) % matches.length)}
-          className="rounded-full py-3 px-6 font-medium border border-border/70 bg-card/70 backdrop-blur text-foreground hover:bg-card"
-        >
-          Suivant →
+          ← Précédent
         </button>
         <button
           onClick={reset}
@@ -315,60 +355,12 @@ function AssocList() {
   );
 }
 
-function AssocDetail() {
-  const scores = useGame((s) => s.scores);
-  const idx = useGame((s) => s.assocIndex);
-  const goto = useGame((s) => s.goto);
-  const matches = useMemo(() => matchAssociations(scores), [scores]);
-  const a = matches[idx];
-  if (!a) return null;
-
-  return (
-    <Screen keyId={`detail-${a.id}`}>
-      <div className="w-full rounded-3xl overflow-hidden bg-card border border-border/60 shadow-[var(--shadow-soft)]">
-        <div className={`h-44 sm:h-56 bg-gradient-to-br ${a.gradient} flex items-center justify-center`}>
-          <span className="text-7xl drop-shadow-sm">{a.emoji}</span>
-        </div>
-        <div className="p-6 sm:p-8 space-y-5">
-          <div>
-            <h2 className="font-display text-3xl text-foreground">{a.name}</h2>
-            <p className="text-muted-foreground italic mt-1">{a.tagline}</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {a.keywords.map((k) => (
-              <span key={k} className="text-xs font-medium px-3 py-1 rounded-full bg-accent/60 text-accent-foreground">
-                {k}
-              </span>
-            ))}
-          </div>
-          <p className="text-foreground/85 leading-relaxed">{a.longDescription}</p>
-
-          <dl className="grid sm:grid-cols-2 gap-4 text-sm">
-            <Info label="Adresse" value={a.address} />
-            <Info label="Horaires" value={a.hours} />
-            <Info label="Contact" value={a.contact} />
-            <Info label="Site" value={<a className="text-primary underline underline-offset-2" href={a.site} target="_blank" rel="noreferrer">{a.site.replace(/^https?:\/\//, "")}</a>} />
-          </dl>
-        </div>
-      </div>
-
-      <div className="mt-6 flex flex-wrap gap-3 justify-center">
-        <button
-          onClick={() => goto("assocList")}
-          className="rounded-full py-3 px-6 font-semibold text-primary-foreground shadow-[var(--shadow-card)]"
-          style={{ background: "linear-gradient(135deg, oklch(0.78 0.15 40), oklch(0.72 0.16 25))" }}
-        >
-          ← D'autres associations ?
-        </button>
-      </div>
-    </Screen>
-  );
-}
-
 function Info({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-xs uppercase tracking-widest text-muted-foreground/80">{label}</dt>
+      <dt className="text-xs uppercase tracking-widest text-muted-foreground/80">
+        {label}
+      </dt>
       <dd className="mt-1 text-foreground">{value}</dd>
     </div>
   );
