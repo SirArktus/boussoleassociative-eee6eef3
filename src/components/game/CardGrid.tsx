@@ -27,9 +27,23 @@ export function CardGrid({ cards, onPick, selectedIds = [] }: Props) {
               isOrphan ? "col-start-2" : ""
             } ${
               isSelected
-                ? "border-2 border-primary shadow-[var(--shadow-soft)] ring-4 ring-primary/20"
+                ? "border-2"
                 : "border border-border/60 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-soft)]"
             }`}
+            style={
+              isSelected
+                ? {
+                    // Plain border-color + box-shadow instead of Tailwind's
+                    // border-primary/ring-*/shadow-[var(...)] utilities:
+                    // those compose through chained --tw-ring-*/@property
+                    // custom properties that don't reliably resolve inside
+                    // a Shadow DOM (the embed widget) across browsers.
+                    borderColor: "oklch(0.75 0.15 40)",
+                    boxShadow:
+                      "0 0 0 4px oklch(0.75 0.15 40 / 0.2), 0 10px 40px -12px oklch(0.7 0.12 40 / 0.25)",
+                  }
+                : undefined
+            }
           >
             <div className="text-2xl sm:text-3xl">{c.emoji}</div>
             <div className="font-display text-xs sm:text-sm leading-tight text-foreground">
