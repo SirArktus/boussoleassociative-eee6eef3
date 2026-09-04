@@ -66,7 +66,7 @@ export function NavBar({
   prevLabel?: string;
 }) {
   return (
-    <div className="mt-10 flex items-center justify-between w-full max-w-md gap-4">
+    <div className="mt-6 flex items-center justify-between w-full max-w-md gap-4">
       {showPrev ? (
         <button
           type="button"
