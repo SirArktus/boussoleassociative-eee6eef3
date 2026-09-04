@@ -8,10 +8,6 @@ import {
   cardsHate,
   cardsFuture,
   cardsFeel,
-  cardsPower,
-  dilemmas as allDilemmas,
-  computeProfile,
-  matchAssociations,
   type Card,
 } from "@/lib/game-data";
 import { Screen, Title, Sub, NavBar, AppHeader } from "@/components/game/Screen";
@@ -28,7 +24,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "En 3 minutes, découvre les associations faites pour toi. Pas d'inscription, juste quelques cartes à choisir.",
+          "En 3 minutes, découvre les associations du Forum de Rezé faites pour toi. Pas d'inscription, juste quelques cartes à choisir.",
       },
       {
         property: "og:title",
@@ -38,8 +34,10 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "En 3 minutes, découvre les associations faites pour toi. Pas d'inscription, juste quelques cartes à choisir.",
+          "En 3 minutes, découvre les associations du Forum de Rezé faites pour toi. Pas d'inscription, juste quelques cartes à choisir.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: GamePage,
@@ -76,23 +74,13 @@ function GamePage() {
             cards={cardsFeel}
           />
         )}
-        {step === "power" && (
-          <PickScreen
-            key="power"
-            stepKey="power"
-            title="Mon super pouvoir ?"
-            cards={cardsPower}
-          />
-        )}
-        {step === "dilemmas" && <DilemmasScreen key="dilemmas" />}
-        {step === "profile" && <ProfileScreen key="profile" />}
-        {step === "assocList" && <AssocFeed key="assocList" />}
+        {step === "results" && <ResultsScreen key="results" />}
       </AnimatePresence>
     </main>
   );
 }
 
-// ---------- Screens ----------
+// ---------- Écrans ----------
 
 function Welcome() {
   const goto = useGame((s) => s.goto);
@@ -173,65 +161,42 @@ function PickScreen({
   cards: Card[];
   columns?: 2 | 3;
 }) {
-  const setChoice = useGame((s) => s.setChoice);
+  const toggleChoice = useGame((s) => s.toggleChoice);
   const next = useGame((s) => s.next);
   const prev = useGame((s) => s.prev);
-  const selectedId = useGame((s) => s.selections[stepKey]);
+  const selectedIds = useGame((s) => s.selections[stepKey]);
   return (
     <Screen keyId={stepKey}>
       <Title>{title}</Title>
+      <p className="text-sm text-muted-foreground/80 mt-2">
+        Je peux choisir plusieurs cartes.
+      </p>
       <div className="h-4" />
       <CardGrid
         cards={cards}
         columns={columns}
-        selectedId={selectedId}
-        onPick={(c) => setChoice(stepKey, c.id)}
+        selectedIds={selectedIds}
+        onPick={(c) => toggleChoice(stepKey, c.id)}
       />
-      <NavBar onPrev={prev} onNext={next} nextDisabled={!selectedId} />
+      <NavBar
+        onPrev={prev}
+        onNext={next}
+        nextDisabled={selectedIds.length === 0}
+        nextLabel={stepKey === "feel" ? "Voir mes associations" : "Suivant"}
+      />
     </Screen>
   );
 }
 
-function DilemmasScreen() {
-  const idx = useGame((s) => s.dilemmaIndex);
-  const order = useGame((s) => s.dilemmaOrder);
-  const dilemmaSelections = useGame((s) => s.selections.dilemmas);
-  const setDilemmaChoice = useGame((s) => s.setDilemmaChoice);
-  const next = useGame((s) => s.next);
+const MEDALS = ["🥇", "🥈", "🥉", "4.", "5."];
+
+function ResultsScreen() {
+  const compute = useGame((s) => s.results);
   const prev = useGame((s) => s.prev);
-
-  const dIdx = order[idx];
-  const d = dIdx !== undefined ? allDilemmas[dIdx] : undefined;
-  if (!d) return null;
-  const selectedId = dilemmaSelections[dIdx];
-  const cards: Card[] = [d.a, d.b];
-
+  const reset = useGame((s) => s.reset);
+  const results = useMemo(() => compute(), [compute]);
   return (
-    <Screen keyId={`dilemma-${idx}`}>
-      <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground/80 mb-3">
-        {idx + 1} / {order.length}
-      </p>
-      <Title>Je préfère…</Title>
-      <div className="h-4" />
-      <CardGrid
-        cards={cards}
-        columns={2}
-        selectedId={selectedId}
-        onPick={(c) => setDilemmaChoice(c.id)}
-      />
-      <NavBar onPrev={prev} onNext={next} nextDisabled={!selectedId} />
-    </Screen>
-  );
-}
-
-function ProfileScreen() {
-  const computeScores = useGame((s) => s.computeScores);
-  const next = useGame((s) => s.next);
-  const prev = useGame((s) => s.prev);
-  const scores = computeScores();
-  const profile = useMemo(() => computeProfile(scores), [scores]);
-  return (
-    <Screen keyId="profile">
+    <Screen keyId="results">
       <motion.div
         initial={{ scale: 0.7, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -240,99 +205,31 @@ function ProfileScreen() {
         <Compass spinning={false} />
       </motion.div>
       <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground/80 mt-6 mb-2">
-        Mon profil
-      </p>
-      <Title>{profile.title}</Title>
-      <div className="mt-4 mb-2 space-y-1.5 text-center text-lg text-foreground/80 max-w-md">
-        {profile.lines.map((l, i) => (
-          <motion.p
-            key={i}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 + i * 0.15, duration: 0.5 }}
-          >
-            {l}
-          </motion.p>
-        ))}
-      </div>
-      <NavBar onPrev={prev} onNext={next} nextLabel="Voir mes associations" />
-    </Screen>
-  );
-}
-
-function AssocFeed() {
-  const computeScores = useGame((s) => s.computeScores);
-  const prev = useGame((s) => s.prev);
-  const reset = useGame((s) => s.reset);
-  const scores = computeScores();
-  const matches = useMemo(() => matchAssociations(scores), [scores]);
-  return (
-    <Screen keyId="assoc-feed">
-      <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground/80 mb-2">
         Mes associations
       </p>
       <Title>Voici ce qui me ressemble.</Title>
-      <Sub>Fais défiler pour découvrir chaque association.</Sub>
+      <Sub>Rendez-vous sur leur stand au Forum des associations.</Sub>
 
-      <div className="space-y-6 w-full">
-        {matches.map((a, i) => (
+      <div className="space-y-3 w-full max-w-xl">
+        {results.map((r, i) => (
           <motion.article
-            key={a.id}
+            key={r.nom}
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
               duration: 0.5,
-              delay: i * 0.05,
+              delay: i * 0.12,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="w-full rounded-3xl overflow-hidden bg-card border border-border/60 shadow-[var(--shadow-soft)]"
+            className="w-full rounded-3xl bg-card border border-border/60 shadow-[var(--shadow-card)] p-5 flex items-center gap-4"
           >
-            <div
-              className={`h-32 sm:h-40 bg-gradient-to-br ${a.gradient} flex items-center justify-center`}
-            >
-              <span className="text-6xl drop-shadow-sm">{a.emoji}</span>
-            </div>
-            <div className="p-5 sm:p-6 space-y-3">
-              <div>
-                <h2 className="font-display text-2xl text-foreground">
-                  {a.name}
-                </h2>
-                <p className="text-sm text-muted-foreground italic mt-0.5">
-                  {a.tagline}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {a.keywords.map((k) => (
-                  <span
-                    key={k}
-                    className="text-xs font-medium px-3 py-1 rounded-full bg-accent/60 text-accent-foreground"
-                  >
-                    {k}
-                  </span>
-                ))}
-              </div>
-              <p className="text-foreground/85 leading-relaxed">
-                {a.longDescription}
-              </p>
-              <dl className="grid sm:grid-cols-2 gap-3 text-sm pt-3 border-t border-border/50 mt-2">
-                <Info label="Adresse" value={a.address} />
-                <Info label="Horaires" value={a.hours} />
-                <Info label="Contact" value={a.contact} />
-                <Info
-                  label="Site"
-                  value={
-                    <a
-                      className="text-primary underline underline-offset-2"
-                      href={a.site}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {a.site.replace(/^https?:\/\//, "")}
-                    </a>
-                  }
-                />
-              </dl>
-            </div>
+            <span className="text-2xl w-9 shrink-0 text-center">{MEDALS[i]}</span>
+            <h2 className="font-display text-xl sm:text-2xl text-foreground flex-1 leading-tight">
+              {r.nom}
+            </h2>
+            <span className="text-sm font-medium px-3 py-1 rounded-full bg-accent/60 text-accent-foreground whitespace-nowrap">
+              Stand {r.stand}
+            </span>
           </motion.article>
         ))}
       </div>
@@ -352,16 +249,5 @@ function AssocFeed() {
         </button>
       </div>
     </Screen>
-  );
-}
-
-function Info({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <dt className="text-xs uppercase tracking-widest text-muted-foreground/80">
-        {label}
-      </dt>
-      <dd className="mt-1 text-foreground">{value}</dd>
-    </div>
   );
 }

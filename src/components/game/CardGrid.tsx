@@ -5,15 +5,15 @@ type Props = {
   cards: Card[];
   onPick: (c: Card) => void;
   columns?: 2 | 3;
-  selectedId?: string;
+  selectedIds?: string[];
 };
 
-export function CardGrid({ cards, onPick, columns = 2, selectedId }: Props) {
+export function CardGrid({ cards, onPick, columns = 2, selectedIds = [] }: Props) {
   const cols = columns === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2";
   return (
     <div className={`grid grid-cols-2 ${cols} gap-3 sm:gap-4 w-full`}>
       {cards.map((c, i) => {
-        const isSelected = selectedId === c.id;
+        const isSelected = selectedIds.includes(c.id);
         return (
           <motion.button
             key={c.id}
