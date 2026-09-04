@@ -43,7 +43,9 @@
   --gradient-horizon: linear-gradient(180deg, oklch(0.94 0.06 230) 0%, oklch(0.9 0.09 55) 60%, oklch(0.85 0.11 30) 100%);
 }
 
-:root {
+/* :host lets these tokens also apply inside a Shadow DOM (embed widget),
+   where :root matches nothing since there is no document root there. */
+:root, :host {
   --radius: 1.25rem;
   /* Aube pastel palette */
   --background: oklch(0.985 0.018 75);      /* #FFF6EC */

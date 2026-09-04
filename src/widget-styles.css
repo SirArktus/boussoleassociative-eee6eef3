@@ -1,0 +1,25 @@
+@import "@fontsource/quicksand/400.css";
+@import "@fontsource/quicksand/500.css";
+@import "@fontsource/quicksand/600.css";
+@import "@fontsource/quicksand/700.css";
+@import "@fontsource/fraunces/500.css";
+@import "@fontsource/fraunces/600.css";
+@import "@fontsource/fraunces/700.css";
+@import "./styles.css";
+
+/*
+ * styles.css applies fonts/background via `html, body { ... }` selectors —
+ * those don't exist inside the widget's Shadow DOM, so the mount element
+ * gets the same treatment here explicitly. No `background-attachment: fixed`
+ * (unlike the standalone site's body rule): the widget sits inside an
+ * arbitrary host page and shouldn't detach its background from its own box
+ * while that page scrolls.
+ */
+.boussole-widget-root {
+  font-family: var(--font-sans);
+  color: var(--color-foreground);
+  background-color: var(--color-background);
+  background-image:
+    radial-gradient(ellipse at top, oklch(0.94 0.08 55 / 0.5), transparent 60%),
+    radial-gradient(ellipse at bottom, oklch(0.9 0.07 230 / 0.35), transparent 55%);
+}
