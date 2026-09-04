@@ -15,6 +15,13 @@ const dirname = fileURLToPath(new URL(".", import.meta.url));
 export default defineConfig({
   plugins: [tsconfigPaths(), react(), tailwindcss()],
   publicDir: false,
+  // React/scheduler read process.env.NODE_ENV; unlike the main app build
+  // (wired up by @lovable.dev/vite-tanstack-config), this standalone config
+  // doesn't get that replaced automatically, which throws
+  // `ReferenceError: process is not defined` in the browser at runtime.
+  define: {
+    "process.env.NODE_ENV": JSON.stringify("production"),
+  },
   build: {
     outDir: "dist-widget",
     emptyOutDir: true,
@@ -27,6 +34,14 @@ export default defineConfig({
       name: "BoussoleAssociativeWidget",
       formats: ["iife"],
       fileName: () => "boussole-associative-widget.js",
+    },
+    rollupOptions: {
+      output: {
+        // Defensive fallback in case anything still reads `process` at
+        // runtime outside what `define` statically replaced.
+        banner:
+          "if(typeof process==='undefined'){var process={env:{NODE_ENV:'production'}};}",
+      },
     },
   },
 });
